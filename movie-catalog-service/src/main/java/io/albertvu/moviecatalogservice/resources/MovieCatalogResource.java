@@ -5,6 +5,7 @@ package io.albertvu.moviecatalogservice.resources;
 import io.albertvu.moviecatalogservice.models.CatalogItem;
 import io.albertvu.moviecatalogservice.models.Movie;
 import io.albertvu.moviecatalogservice.models.Rating;
+import io.albertvu.moviecatalogservice.models.UserRating;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,30 +25,21 @@ public class MovieCatalogResource {
 	@Autowired
 	private RestTemplate restTemplate;
 
-	@Autowired
-	private WebClient.Builder webClientBuilder;
+
 
 	@RequestMapping("/{userId}")
 	public List<CatalogItem> getCatalog(@PathVariable String userId) {
 
-		// get all rated movie IDs
-		List<Rating> ratings = Arrays.asList(
-				new Rating("1234", 4),
-				new Rating("5678", 3)
-		);
+		// grabs list of movieId and rating
+		UserRating ratings = restTemplate.getForObject("http://localhost:8083/ratingsdata/users/" + userId, UserRating.class);
 
 		// we can make API call with REST template using for loop or map
-		return ratings.stream().map(rating -> {
+		return ratings.getUserRating().stream().map(rating -> {
 			// get the payload at the URL and unmarshal into the class
-			//Movie movie = restTemplate.getForObject("http://localhost:8082/movies/" + rating.getMovieId(), Movie.class);
+			// For each movie ID, call movie info service and get details
+			Movie movie = restTemplate.getForObject("http://localhost:8082/movies/" + rating.getMovieId(), Movie.class);
 
-			Movie movie = webClientBuilder.build()
-					.get()
-					.uri("http://localhost:8082/movies/" + rating.getMovieId())
-					.retrieve()
-					.bodyToMono(Movie.class)
-					.block();
-
+			// Put them all together
 			return new CatalogItem(movie.getName(), "Test description", rating.getRating());
 		})
 		// ToList collector can be used for collecting all Stream elements into a List instance
