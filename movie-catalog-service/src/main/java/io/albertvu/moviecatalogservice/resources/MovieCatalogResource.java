@@ -31,16 +31,16 @@ public class MovieCatalogResource {
 	public List<CatalogItem> getCatalog(@PathVariable String userId) {
 
 		// grabs list of movieId and rating
-		UserRating ratings = restTemplate.getForObject("http://localhost:8083/ratingsdata/users/" + userId, UserRating.class);
+		UserRating ratings = restTemplate.getForObject("http://ratings-data-service/ratingsdata/users/" + userId, UserRating.class);
 
 		// we can make API call with REST template using for loop or map
 		return ratings.getUserRating().stream().map(rating -> {
 			// get the payload at the URL and unmarshal into the class
 			// For each movie ID, call movie info service and get details
-			Movie movie = restTemplate.getForObject("http://localhost:8082/movies/" + rating.getMovieId(), Movie.class);
+			Movie movie = restTemplate.getForObject("http://movie-info-service/movies/" + rating.getMovieId(), Movie.class);
 
 			// Put them all together
-			return new CatalogItem(movie.getName(), "Test description", rating.getRating());
+			return new CatalogItem(movie.getName(), movie.getDescription(), rating.getRating());
 		})
 		// ToList collector can be used for collecting all Stream elements into a List instance
 		.collect(Collectors.toList());
